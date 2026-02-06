@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  # ─────────────────────────────────────
+  # PostgreSQL
+  # ─────────────────────────────────────
+  postgres:
+    image: postgres:16
+    container_name: pg
+    environment:
+      POSTGRES_USER: superset
+      POSTGRES_PASSWORD: superset
+      POSTGRES_DB: superset
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/01_init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U superset -d superset"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────
+  # Ollama – lokales LLM
+  # ─────────────────────────────────────
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # GPU-Support – erst aktiv wenn native Docker Engine läuft
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # ─────────────────────────────────────
+  # Superset – Initialisierung (läuft einmal, dann fertig)
+  # ─────────────────────────────────────
+  superset-init:
+    build: .
+    container_name: superset-init
+    environment:
+      SUPERSET_CONFIG_PATH: /app/superset_config.py
+      SQLALCHEMY_DATABASE_URI: postgresql://superset:superset@postgres:5432/superset
+      SUPERSET_SECRET_KEY: change-me-for-production
+    volumes:
+      - ./superset_config.py:/app/superset_config.py
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: bash -c "superset db upgrade && (superset fab create-admin --username admin --firstname Admin --lastname User --email admin@localhost --password admin || true) && superset init"
+
+  # ─────────────────────────────────────
+  # Superset – Hauptanwendung
+  # ─────────────────────────────────────
+  superset:
+    build: .
+    container_name: superset
+    ports:
+      - "8088:8088"
+    environment:
+      SUPERSET_CONFIG_PATH: /app/superset_config.py
+      SQLALCHEMY_DATABASE_URI: postgresql://superset:superset@postgres:5432/superset
+      SUPERSET_SECRET_KEY: change-me-for-production
+      OPENAI_API_KEY: ollama
+      OPENAI_API_BASE_URL: http://ollama:11434/v1
+    volumes:
+      - ./superset_config.py:/app/superset_config.py
+    depends_on:
+      superset-init:
+        condition: service_completed_successfully
+      ollama:
+        condition: service_started
+    command: superset run -p 8088 -h 0.0.0.0
+
+  # ─────────────────────────────────────
+  # NL → SQL Service
+  # ─────────────────────────────────────
+  nl-to-sql:
+    build:
+      context: ./nl-to-sql
+    container_name: nl-to-sql
+    ports:
+      - "5000:5000"
+    environment:
+      OLLAMA_URL: http://ollama:11434/api/chat
+      MODEL: mistral:7b-instruct-q4_k_m
+    depends_on:
+      ollama:
+        condition: service_started
+
+volumes:
+  pg_data:
+  ollama_data:

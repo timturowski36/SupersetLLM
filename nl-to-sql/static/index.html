@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NL → SQL · SGB 8</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0e0e0f;
+    --surface:   #18181b;
+    --border:    #2a2a2e;
+    --text:      #e2e2e5;
+    --text-dim:  #6b6b70;
+    --accent:    #7c6aff;
+    --accent-glow: rgba(124,106,255,0.25);
+    --green:     #4ade80;
+    --red:       #f87171;
+  }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── Header ── */
+  header {
+    width: 100%;
+    max-width: 780px;
+    padding: 48px 24px 0;
+    text-align: center;
+  }
+  header h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  header h1 span { color: var(--accent); }
+  header p {
+    color: var(--text-dim);
+    font-size: 0.82rem;
+    margin-top: 6px;
+    font-weight: 400;
+  }
+
+  /* ── Chat-Verlauf ── */
+  #chat {
+    width: 100%;
+    max-width: 780px;
+    padding: 32px 24px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .msg {
+    display: flex;
+    gap: 12px;
+    animation: fadeUp 0.3s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-avatar {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    font-weight: 600;
+  }
+  .msg-avatar.user   { background: var(--accent); color: #fff; }
+  .msg-avatar.bot    { background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); }
+
+  .msg-body { flex: 1; }
+  .msg-label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  .msg-text {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  /* ── SQL-Block ── */
+  .sql-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 2px;
+  }
+  .sql-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sql-block-header span {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .copy-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.7rem;
+    padding: 3px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+  pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--green);
+    padding: 14px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.6;
+  }
+
+  /* ── Fehler ── */
+  .error-block {
+    background: rgba(248,113,113,0.08);
+    border: 1px solid rgba(248,113,113,0.25);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    color: var(--red);
+    margin-top: 2px;
+  }
+
+  /* ── Spinner ── */
+  .spinner {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--text-dim); font-size: 0.82rem;
+  }
+  .spinner::before {
+    content: '';
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Eingabefeld ── */
+  .input-area {
+    width: 100%;
+    max-width: 780px;
+    padding: 0 24px 32px;
+  }
+  .input-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    transition: border-color 0.2s;
+  }
+  .input-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 16px var(--accent-glow); }
+
+  #input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.88rem;
+    resize: none;
+    line-height: 1.5;
+    max-height: 120px;
+  }
+  #input::placeholder { color: var(--text-dim); }
+
+  #send-btn {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s, transform 0.1s;
+  }
+  #send-btn:hover { background: #6a58e6; }
+  #send-btn:active { transform: scale(0.93); }
+  #send-btn:disabled { background: var(--border); cursor: not-allowed; }
+  #send-btn svg { width: 18px; height: 18px; }
+
+  /* ── Beispiel-Fragen ── */
+  .suggestions {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding: 0 24px 16px;
+    max-width: 780px;
+    width: 100%;
+  }
+  .suggestion {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.75rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .suggestion:hover { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>NL → <span>SQL</span></h1>
+  <p>SGB 8 · Jugendhilfe-Datenbank · Frage auf Deutsch stellen</p>
+</header>
+
+<div id="chat"></div>
+
+<div class="suggestions" id="suggestions">
+  <button class="suggestion" onclick="useSuggestion(this)">Wie viele KWGs sind aktuell in Bearbeitung?</button>
+  <button class="suggestion" onclick="useSuggestion(this)">Welcher Sachbearbeiter hat die meisten Fälle?</button>
+  <button class="suggestion" onclick="useSuggestion(this)">Zeige alle aktiven Beistandschaften</button>
+  <button class="suggestion" onclick="useSuggestion(this)">Wie viele Meldungen pro Monat in 2024?</button>
+  <button class="suggestion" onclick="useSuggestion(this)">Welche Klienten haben mehr als eine KWG?</button>
+</div>
+
+<div class="input-area">
+  <div class="input-wrap">
+    <textarea id="input" rows="1" placeholder="Deine Frage hier…" onkeydown="handleKey(event)"></textarea>
+    <button id="send-btn" onclick="send()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+const chat    = document.getElementById("chat");
+const input   = document.getElementById("input");
+const sendBtn = document.getElementById("send-btn");
+
+function useSuggestion(el) {
+  input.value = el.textContent;
+  input.focus();
+}
+
+function handleKey(e) {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+}
+
+async function send() {
+  const q = input.value.trim();
+  if (!q) return;
+
+  sendBtn.disabled = true;
+  input.value = "";
+
+  // Nutzer-Nachricht anzeigen
+  appendMsg("user", q);
+
+  // Spinner
+  const spinnerId = "spinner-" + Date.now();
+  appendRaw(spinnerId, '<div class="msg"><div class="msg-avatar bot">AI</div><div class="msg-body"><div class="spinner">Mistral generiert SQL…</div></div></div>');
+
+  try {
+    const res = await fetch("/api/nl-to-sql", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: q })
+    });
+
+    const data = await res.json();
+    document.getElementById(spinnerId).remove();
+
+    if (!res.ok) {
+      appendError(data.error || "Unbekannter Fehler");
+    } else {
+      appendSQL(data.sql);
+    }
+  } catch (err) {
+    document.getElementById(spinnerId)?.remove();
+    appendError("Verbindungsfehler – läuft der Service?");
+  }
+
+  sendBtn.disabled = false;
+  input.focus();
+}
+
+function appendMsg(role, text) {
+  const div = document.createElement("div");
+  div.className = "msg";
+  div.innerHTML = `
+    <div class="msg-avatar ${role}">${role === "user" ? "Du" : "AI"}</div>
+    <div class="msg-body">
+      <div class="msg-label">${role === "user" ? "Deine Frage" : "Antwort"}</div>
+      <div class="msg-text">${escHtml(text)}</div>
+    </div>`;
+  chat.appendChild(div);
+  scrollDown();
+}
+
+function appendSQL(sql) {
+  const div = document.createElement("div");
+  div.className = "msg";
+  div.innerHTML = `
+    <div class="msg-avatar bot">AI</div>
+    <div class="msg-body">
+      <div class="msg-label">Generiertes SQL</div>
+      <div class="sql-block">
+        <div class="sql-block-header">
+          <span>PostgreSQL</span>
+          <button class="copy-btn" onclick="copySQL(this, ${JSON.stringify(sql)})">Kopieren</button>
+        </div>
+        <pre>${escHtml(sql)}</pre>
+      </div>
+    </div>`;
+  chat.appendChild(div);
+  scrollDown();
+}
+
+function appendError(msg) {
+  const div = document.createElement("div");
+  div.className = "msg";
+  div.innerHTML = `
+    <div class="msg-avatar bot">AI</div>
+    <div class="msg-body">
+      <div class="error-block">⚠ ${escHtml(msg)}</div>
+    </div>`;
+  chat.appendChild(div);
+  scrollDown();
+}
+
+function appendRaw(id, html) {
+  const div = document.createElement("div");
+  div.id = id;
+  div.innerHTML = html;
+  chat.appendChild(div);
+  scrollDown();
+}
+
+function copySQL(btn, sql) {
+  navigator.clipboard.writeText(sql).then(() => {
+    btn.textContent = "Kopiert ✓";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "Kopieren"; btn.classList.remove("copied"); }, 1500);
+  });
+}
+
+function scrollDown() { chat.scrollTop = chat.scrollHeight; }
+function escHtml(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+</script>
+</body>
+</html>

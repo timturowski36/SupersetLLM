@@ -1,0 +1,3 @@
+cat > ~/SupersetLLM/requirements.txt << 'EOF'
+psycopg2-binary
+EOF

@@ -171,80 +171,6 @@ done
 - `beistandschaften` – Rechtliche Beistandschaften
 - `massnahmen` – Maßnahmen zu Kindeswohlgefährdungen
 
-## 🐛 Troubleshooting
-
-### Mistral generiert kein SQL / NL-to-SQL antwortet nicht
-
-```bash
-# Prüfen ob Mistral heruntergeladen wurde
-docker exec ollama ollama list
-
-# Falls leer: Manuell herunterladen
-docker exec ollama ollama pull mistral:7b-instruct-q4_k_m
-
-# NL-to-SQL Service neu starten
-docker restart nl-to-sql
-```
-
-### Superset kann nicht auf PostgreSQL zugreifen
-
-```bash
-# PostgreSQL läuft?
-docker ps | grep pg
-
-# Logs prüfen
-docker logs pg
-
-# Neu starten
-docker restart pg
-```
-
-### GPU wird nicht erkannt
-
-```bash
-# NVIDIA Container Toolkit installiert?
-docker run --rm --gpus all nvidia/cuda:11.0.3-base-ubuntu20.04 nvidia-smi
-
-# Wenn Fehler: Toolkit installieren
-sudo apt-get install -y nvidia-container-toolkit
-sudo systemctl restart docker
-
-# docker-compose.yml: GPU-Block einkommentieren (Zeilen 36-42)
-```
-
-### Superset zeigt "No data" in SQL Lab
-
-- Stelle sicher, dass die Datenbank-Verbindung auf `sgb8` zeigt (nicht `superset`)
-- Schema: `public` auswählen
-- Tabellen sollten sichtbar sein: `sachbearbeiter`, `klienten`, etc.
-
-### "Permission denied" bei Docker-Befehlen
-
-```bash
-# User zur Docker-Gruppe hinzufügen
-sudo usermod -aG docker $USER
-newgrp docker
-```
-
-## 🔐 Produktions-Hinweise
-
-**Dieses Setup ist für Entwicklung/POC gedacht.** Für Produktionsumgebungen:
-
-1. **Passwörter ändern** (PostgreSQL, Superset Admin, `SUPERSET_SECRET_KEY`)
-2. **HTTPS einrichten** (Reverse Proxy mit nginx/Caddy)
-3. **Persistente Volumes** in docker-compose konfigurieren
-4. **Backup-Strategie** für PostgreSQL einrichten
-5. **Resource Limits** in Docker setzen
-6. **Monitoring** einrichten (Prometheus + Grafana)
-7. **GPU-Variante nutzen** für Produktions-Performance
-
-## 📝 Datenschutz
-
-- **Alle Daten bleiben lokal** – kein Cloud-LLM, keine externen APIs
-- Mistral läuft vollständig on-premise über Ollama
-- Testdaten sind synthetisch generiert (keine echten Personendaten)
-- Für echte SGB 8 Daten: Datenschutzkonzept nach DSGVO erforderlich
-
 ## 🛠 Technologie-Stack
 
 | Komponente | Version | Lizenz |
@@ -266,6 +192,3 @@ newgrp docker
 
 Dieses Projekt nutzt ausschließlich Open-Source-Komponenten mit permissiven Lizenzen (Apache 2.0, MIT, BSD, PostgreSQL License). Alle Teile können kommerziell genutzt werden.
 
----
-
-**Fragen? Probleme?** Öffne ein Issue oder kontaktiere das Entwicklerteam.

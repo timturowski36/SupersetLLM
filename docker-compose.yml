@@ -93,8 +93,20 @@ services:
     environment:
       OLLAMA_URL: http://ollama:11434/api/chat
       MODEL: mistral:7b-instruct-q4_k_m
+      PG_HOST: pg
+      PG_PORT: 5432
+      PG_DATABASE: sgb8
+      PG_USER: superset
+      PG_PASSWORD: superset
+      SUPERSET_URL: http://superset:8088
+      SUPERSET_USER: admin
+      SUPERSET_PASS: admin
     depends_on:
       ollama:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      superset:
         condition: service_started
 
 volumes:

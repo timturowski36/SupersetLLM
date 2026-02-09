@@ -49,76 +49,8 @@ Apache Superset hat **keine native NL-to-SQL Funktion** in der Open-Source-Versi
 3. Mistral generiert PostgreSQL-SQL
 4. Nutzer kopiert SQL und führt es in Superset SQL Lab aus
 
-## 🔧 Voraussetzungen
-
-### Hardware
-- **Minimum:** 16 GB RAM (ohne GPU läuft Mistral auf CPU, langsam aber funktional)
-- **Empfohlen:** 32 GB RAM + NVIDIA GPU (8+ GB VRAM) für schnelle Inference
-- **Speicher:** ~20 GB freier Festplattenspeicher
-
-### Software
-- Ubuntu 20.04+ (oder andere Linux-Distribution)
-- Docker Engine (nicht Docker Desktop mit Snap!)
-- Docker Compose Plugin
-- (Optional) NVIDIA Container Toolkit für GPU-Support
-
-### Wichtig: Docker Installation
-
-**Snap-Docker funktioniert nicht** mit GPU-Support. Installiere native Docker Engine:
-
-```bash
-# Snap Docker entfernen (falls vorhanden)
-sudo snap remove --purge docker
-
-# Native Docker Engine installieren
-curl -fsSL https://get.docker.com | sudo bash
-
-# User-Zugriff
-sudo usermod -aG docker $USER
-newgrp docker
-
-# (Optional) NVIDIA Container Toolkit für GPU
-sudo apt-get install -y nvidia-container-toolkit
-sudo systemctl restart docker
-```
 
 ## 🚀 Installation
-
-### 1. Repository-Struktur
-
-```
-superset-mistral-sgb8/
-├── docker-compose.yml
-├── Dockerfile              # Superset mit psycopg2
-├── superset_config.py      # Superset-Konfiguration
-├── init.sql                # PostgreSQL-Testdaten
-├── setup.sh                # Automatisches Setup-Script
-└── nl-to-sql/              # NL-to-SQL Service
-    ├── Dockerfile
-    ├── requirements.txt
-    ├── app.py
-    └── static/
-        └── index.html
-```
-
-### 2. Container starten
-
-```bash
-# Alle Dateien in einen Ordner kopieren
-cd superset-mistral-sgb8
-
-# Setup ausführen (startet Container, lädt Mistral herunter)
-chmod +x setup.sh
-bash setup.sh
-```
-
-Das Script führt automatisch aus:
-- Container-Start (PostgreSQL, Ollama, Superset, NL-to-SQL)
-- Mistral 7B Download (~4 GB, 2-5 Minuten)
-- Superset-Initialisierung (Admin-User, Datenbank-Setup)
-
-### 3. Manuelle Installation (falls setup.sh nicht funktioniert)
-
 ```bash
 # 1. Container starten
 docker compose up -d

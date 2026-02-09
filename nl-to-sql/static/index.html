@@ -119,7 +119,10 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
-  .copy-btn {
+  .sql-block-header .btn-row {
+    display: flex; gap: 6px;
+  }
+  .copy-btn, .error-btn, .exec-btn, .dataset-btn {
     background: none;
     border: 1px solid var(--border);
     color: var(--text-dim);
@@ -130,8 +133,11 @@
     cursor: pointer;
     transition: all 0.2s;
   }
-  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .copy-btn:hover  { border-color: var(--accent); color: var(--accent); }
   .copy-btn.copied { color: var(--green); border-color: var(--green); }
+  .error-btn:hover { border-color: var(--red); color: var(--red); }
+  .exec-btn:hover  { border-color: var(--green); color: var(--green); }
+  .dataset-btn:hover { border-color: var(--accent); color: var(--accent); }
 
   pre {
     font-family: 'JetBrains Mono', monospace;
@@ -143,7 +149,58 @@
     line-height: 1.6;
   }
 
-  /* ── Fehler ── */
+  /* ── Fehler-Eingabe (unter SQL-Block) ── */
+  .error-input-wrap {
+    margin-top: 8px;
+    background: rgba(248,113,113,0.06);
+    border: 1px solid rgba(248,113,113,0.2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: none; /* wird per JS eingeschaltet */
+  }
+  .error-input-wrap.visible { display: block; animation: fadeUp 0.2s ease; }
+  .error-input-wrap label {
+    font-size: 0.7rem;
+    color: var(--red);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .error-input-row {
+    display: flex; gap: 8px;
+  }
+  .error-input-row textarea {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    padding: 8px 10px;
+    resize: none;
+    min-height: 60px;
+    outline: none;
+  }
+  .error-input-row textarea:focus { border-color: var(--red); }
+  .error-input-row textarea::placeholder { color: var(--text-dim); }
+  .error-send-btn {
+    background: rgba(248,113,113,0.15);
+    border: 1px solid rgba(248,113,113,0.3);
+    color: var(--red);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.75rem;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    align-self: flex-end;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .error-send-btn:hover { background: rgba(248,113,113,0.25); }
+
+  /* ── Fehler-Anzeige ── */
   .error-block {
     background: rgba(248,113,113,0.08);
     border: 1px solid rgba(248,113,113,0.25);
@@ -236,23 +293,144 @@
     transition: all 0.2s;
   }
   .suggestion:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Ergebnis-Tabelle ── */
+  .result-table-wrap {
+    margin-top: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    animation: fadeUp 0.2s ease;
+  }
+  .result-table-header {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .result-table-header span {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .result-table-container {
+    overflow-x: auto;
+    max-height: 400px;
+  }
+  .result-table {
+    width: 100%;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    border-collapse: collapse;
+  }
+  .result-table th {
+    background: var(--surface);
+    color: var(--accent);
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 500;
+    position: sticky;
+    top: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .result-table td {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .result-table tr:hover td {
+    background: rgba(124,106,255,0.05);
+  }
+
+  /* ── Dataset-Modal ── */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .modal-overlay.visible { display: flex; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 500px;
+    width: 90%;
+    animation: scaleUp 0.2s ease;
+  }
+  @keyframes scaleUp { from { transform: scale(0.9); } to { transform: scale(1); } }
+  .modal h3 {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+  .modal label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .modal input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.88rem;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    outline: none;
+  }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-buttons {
+    display: flex; gap: 10px; justify-content: flex-end;
+  }
+  .modal-btn {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.82rem;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .modal-btn:hover { background: #6a58e6; }
+  .modal-btn.secondary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .modal-btn.secondary:hover { border-color: var(--accent); color: var(--accent); background: var(--surface); }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>NL → <span>SQL</span></h1>
-  <p>SGB 8 · Jugendhilfe-Datenbank · Frage auf Deutsch stellen</p>
+  <h1>NL → <span>Antwort</span></h1>
+  <p>SGB 8 · Analytics-System · Benutzer: Markus (Analytics Basiszugang)</p>
 </header>
 
 <div id="chat"></div>
 
 <div class="suggestions" id="suggestions">
-  <button class="suggestion" onclick="useSuggestion(this)">Wie viele KWGs sind aktuell in Bearbeitung?</button>
-  <button class="suggestion" onclick="useSuggestion(this)">Welcher Sachbearbeiter hat die meisten Fälle?</button>
-  <button class="suggestion" onclick="useSuggestion(this)">Zeige alle aktiven Beistandschaften</button>
-  <button class="suggestion" onclick="useSuggestion(this)">Wie viele Meldungen pro Monat in 2024?</button>
-  <button class="suggestion" onclick="useSuggestion(this)">Welche Klienten haben mehr als eine KWG?</button>
+  <button class="suggestion" onclick="useSuggestion(this)">Wie ist mein Benutzername?</button>
+  <button class="suggestion" onclick="useSuggestion(this)">Welche Rechte habe ich im System?</button>
+  <button class="suggestion" onclick="useSuggestion(this)">Welche Dashboards darf ich sehen?</button>
+  <button class="suggestion" onclick="useSuggestion(this)">Warum kann ich das Leitungs Dashboard nicht sehen?</button>
+  <button class="suggestion" onclick="useSuggestion(this)">Wie beantrage ich die Analytics Leitungsrolle?</button>
 </div>
 
 <div class="input-area">
@@ -272,6 +450,11 @@ const chat    = document.getElementById("chat");
 const input   = document.getElementById("input");
 const sendBtn = document.getElementById("send-btn");
 
+// ── Verlaufskontext: wird mit jeder Anfrage gesendet ──
+// Struktur: [{ question, sql, error? }, ...]
+let history = [];
+let lastSql = null;  // aktuell letztes generiertes SQL
+
 function useSuggestion(el) {
   input.value = el.textContent;
   input.focus();
@@ -281,6 +464,7 @@ function handleKey(e) {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
 }
 
+// ── Neue Frage senden ──
 async function send() {
   const q = input.value.trim();
   if (!q) return;
@@ -288,36 +472,97 @@ async function send() {
   sendBtn.disabled = true;
   input.value = "";
 
-  // Nutzer-Nachricht anzeigen
   appendMsg("user", q);
-
-  // Spinner
-  const spinnerId = "spinner-" + Date.now();
-  appendRaw(spinnerId, '<div class="msg"><div class="msg-avatar bot">AI</div><div class="msg-body"><div class="spinner">Mistral generiert SQL…</div></div></div>');
+  const spinnerId = showSpinner();
 
   try {
     const res = await fetch("/api/nl-to-sql", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: q })
+      body: JSON.stringify({ question: q, history: history })
     });
 
     const data = await res.json();
-    document.getElementById(spinnerId).remove();
+    removeEl(spinnerId);
 
     if (!res.ok) {
       appendError(data.error || "Unbekannter Fehler");
     } else {
+      lastSql = data.sql;
+      // Vorherigen Eintrag in History hinzufügen
+      history.push({ question: q, sql: data.sql });
       appendSQL(data.sql);
     }
   } catch (err) {
-    document.getElementById(spinnerId)?.remove();
+    removeEl(spinnerId);
     appendError("Verbindungsfehler – läuft der Service?");
   }
 
   sendBtn.disabled = false;
   input.focus();
 }
+
+// ── Fehler melden & Korrektur senden ──
+async function sendCorrection(errorText) {
+  if (!errorText.trim() || !lastSql) return;
+
+  // Fehler zum letzten History-Eintrag hinzufügen
+  history[history.length - 1].error = errorText.trim();
+
+  appendMsg("user", "Fehler: " + errorText.trim());
+  const spinnerId = showSpinner("Mistral korrigiert SQL…");
+
+  sendBtn.disabled = true;
+
+  try {
+    const res = await fetch("/api/nl-to-sql", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: "", history: history })
+    });
+
+    const data = await res.json();
+    removeEl(spinnerId);
+
+    if (!res.ok) {
+      appendError(data.error || "Unbekannter Fehler");
+    } else {
+      lastSql = data.sql;
+      // Korrektur-Ergebnis als neuer Eintrag
+      history.push({ question: "[Korrektur]", sql: data.sql });
+      appendSQL(data.sql);
+    }
+  } catch (err) {
+    removeEl(spinnerId);
+    appendError("Verbindungsfehler – läuft der Service?");
+  }
+
+  sendBtn.disabled = false;
+  input.focus();
+}
+
+// ── Fehler-Eingabe öffnen/schließen ──
+function toggleErrorInput(id) {
+  const wrap = document.getElementById("error-input-" + id);
+  wrap.classList.toggle("visible");
+  if (wrap.classList.contains("visible")) {
+    wrap.querySelector("textarea").focus();
+  }
+}
+
+function submitError(id) {
+  const wrap    = document.getElementById("error-input-" + id);
+  const errText = wrap.querySelector("textarea").value.trim();
+  if (!errText) return;
+  wrap.classList.remove("visible");
+  wrap.querySelector("textarea").value = "";
+  sendCorrection(errText);
+}
+
+// ──────────────────────────
+// UI-Hilfsfunktionen
+// ──────────────────────────
+let msgCounter = 0;
 
 function appendMsg(role, text) {
   const div = document.createElement("div");
@@ -333,19 +578,23 @@ function appendMsg(role, text) {
 }
 
 function appendSQL(sql) {
+  const id = ++msgCounter;
   const div = document.createElement("div");
   div.className = "msg";
   div.innerHTML = `
     <div class="msg-avatar bot">AI</div>
     <div class="msg-body">
-      <div class="msg-label">Generiertes SQL</div>
+      <div class="msg-label">Antwort</div>
       <div class="sql-block">
         <div class="sql-block-header">
-          <span>PostgreSQL</span>
-          <button class="copy-btn" onclick="copySQL(this, ${JSON.stringify(sql)})">Kopieren</button>
+          <span>Markus (Analytics Basiszugang)</span>
+          <div class="btn-row">
+            <button class="copy-btn" onclick="copySQL(this, ${JSON.stringify(sql)})">Kopieren</button>
+          </div>
         </div>
         <pre>${escHtml(sql)}</pre>
       </div>
+      <div id="result-${id}"></div>
     </div>`;
   chat.appendChild(div);
   scrollDown();
@@ -363,13 +612,17 @@ function appendError(msg) {
   scrollDown();
 }
 
-function appendRaw(id, html) {
+function showSpinner(text = "Mistral antwortet…") {
+  const id = "spinner-" + Date.now();
   const div = document.createElement("div");
   div.id = id;
-  div.innerHTML = html;
+  div.innerHTML = `<div class="msg"><div class="msg-avatar bot">AI</div><div class="msg-body"><div class="spinner">${text}</div></div></div>`;
   chat.appendChild(div);
   scrollDown();
+  return id;
 }
+
+function removeEl(id) { document.getElementById(id)?.remove(); }
 
 function copySQL(btn, sql) {
   navigator.clipboard.writeText(sql).then(() => {
@@ -380,7 +633,133 @@ function copySQL(btn, sql) {
 }
 
 function scrollDown() { chat.scrollTop = chat.scrollHeight; }
-function escHtml(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function escHtml(s)  { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+// ── SQL ausführen ──
+async function executeSQL(id, sql) {
+  const resultDiv = document.getElementById("result-" + id);
+  resultDiv.innerHTML = '<div class="spinner">Führe SQL aus…</div>';
+
+  try {
+    const res = await fetch("/api/execute-sql", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sql: sql })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      resultDiv.innerHTML = `<div class="error-block">⚠ ${escHtml(data.error || "Unbekannter Fehler")}</div>`;
+      return;
+    }
+
+    // Ergebnis-Tabelle rendern
+    if (data.columns && data.columns.length > 0) {
+      let tableHTML = `
+        <div class="result-table-wrap">
+          <div class="result-table-header">
+            <span>${data.count} Zeile(n)</span>
+          </div>
+          <div class="result-table-container">
+            <table class="result-table">
+              <thead><tr>`;
+      
+      data.columns.forEach(col => {
+        tableHTML += `<th>${escHtml(col)}</th>`;
+      });
+      
+      tableHTML += `</tr></thead><tbody>`;
+      
+      data.rows.forEach(row => {
+        tableHTML += `<tr>`;
+        data.columns.forEach(col => {
+          const val = row[col];
+          tableHTML += `<td>${val !== null && val !== undefined ? escHtml(String(val)) : '<i style="color:var(--text-dim)">NULL</i>'}</td>`;
+        });
+        tableHTML += `</tr>`;
+      });
+      
+      tableHTML += `</tbody></table></div></div>`;
+      resultDiv.innerHTML = tableHTML;
+    } else if (data.message) {
+      resultDiv.innerHTML = `<div style="margin-top:8px;color:var(--green);font-size:0.82rem;">✓ ${escHtml(data.message)}</div>`;
+    }
+
+  } catch (err) {
+    resultDiv.innerHTML = `<div class="error-block">⚠ Verbindungsfehler</div>`;
+  }
+
+  scrollDown();
+}
+
+// ── Dataset-Modal anzeigen ──
+let currentDatasetSQL = null;
+
+function showDatasetModal(sql) {
+  currentDatasetSQL = sql;
+  document.getElementById("dataset-modal").classList.add("visible");
+  document.getElementById("dataset-name-input").focus();
+}
+
+function hideDatasetModal() {
+  document.getElementById("dataset-modal").classList.remove("visible");
+  document.getElementById("dataset-name-input").value = "";
+  currentDatasetSQL = null;
+}
+
+async function createDataset() {
+  const name = document.getElementById("dataset-name-input").value.trim();
+  if (!name || !currentDatasetSQL) return;
+
+  const modal = document.getElementById("dataset-modal");
+  const btn = modal.querySelector(".modal-btn");
+  btn.disabled = true;
+  btn.textContent = "Erstelle…";
+
+  try {
+    const res = await fetch("/api/create-dataset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sql: currentDatasetSQL, name: name })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert("❌ Fehler: " + (data.error || "Unbekannter Fehler"));
+    } else {
+      alert("✓ Dataset erstellt!\n\nÖffne: " + data.url);
+      window.open(data.url, "_blank");
+      hideDatasetModal();
+    }
+
+  } catch (err) {
+    alert("❌ Verbindungsfehler");
+  }
+
+  btn.disabled = false;
+  btn.textContent = "Erstellen";
+}
 </script>
+
+<!-- Dataset-Erstellung Modal -->
+<div class="modal-overlay" id="dataset-modal" onclick="if(event.target===this)hideDatasetModal()">
+  <div class="modal">
+    <h3>Virtuelles Dataset erstellen</h3>
+    <label for="dataset-name-input">Dataset-Name</label>
+    <input 
+      type="text" 
+      id="dataset-name-input" 
+      placeholder="z.B. KWG_Aktiv_2024" 
+      onkeydown="if(event.key==='Enter')createDataset()"
+    />
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" onclick="hideDatasetModal()">Abbrechen</button>
+      <button class="modal-btn" onclick="createDataset()">Erstellen</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
